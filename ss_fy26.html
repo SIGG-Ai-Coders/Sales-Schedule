@@ -1,0 +1,539 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/leaflet-search.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title></title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="js/leaflet-search.js"></script>
+        <script src="data/TKO_FDU_2022_0.js"></script>
+        <script src="data/Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1.js"></script>
+        <script>
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[48.12805798554058,-118.70215841330169],[51.39968595468328,-114.54843392530032]]);
+        // Add OpenStreetMap basemap
+        var baseMap_OSM = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        function pop_TKO_FDU_2022_0(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Name'] !== null ? autolinker.link(String(feature.properties['Name']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['description'] !== null ? autolinker.link(String(feature.properties['description']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['timestamp'] !== null ? autolinker.link(String(feature.properties['timestamp']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['begin'] !== null ? autolinker.link(String(feature.properties['begin']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['end'] !== null ? autolinker.link(String(feature.properties['end']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['altitudeMode'] !== null ? autolinker.link(String(feature.properties['altitudeMode']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['tessellate'] !== null ? autolinker.link(String(feature.properties['tessellate']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['extrude'] !== null ? autolinker.link(String(feature.properties['extrude']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['visibility'] !== null ? autolinker.link(String(feature.properties['visibility']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['drawOrder'] !== null ? autolinker.link(String(feature.properties['drawOrder']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['icon'] !== null ? autolinker.link(String(feature.properties['icon']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FID'] !== null ? autolinker.link(String(feature.properties['FID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FDU'] !== null ? autolinker.link(String(feature.properties['FDU']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['Hectares'] !== null ? autolinker.link(String(feature.properties['Hectares']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['snippet'] !== null ? autolinker.link(String(feature.properties['snippet']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_TKO_FDU_2022_0_0() {
+            return {
+                pane: 'pane_TKO_FDU_2022_0',
+                opacity: 1,
+                color: 'rgba(128,29,135,1.0)',
+                dashArray: '',
+                lineCap: 'square',
+                lineJoin: 'bevel',
+                weight: 4.0,
+                fillOpacity: 0,
+                interactive: false,
+            }
+        }
+        map.createPane('pane_TKO_FDU_2022_0');
+        map.getPane('pane_TKO_FDU_2022_0').style.zIndex = 400;
+        map.getPane('pane_TKO_FDU_2022_0').style['mix-blend-mode'] = 'normal';
+        var layer_TKO_FDU_2022_0 = new L.geoJson(json_TKO_FDU_2022_0, {
+            attribution: '',
+            interactive: false,
+            dataVar: 'json_TKO_FDU_2022_0',
+            layerName: 'layer_TKO_FDU_2022_0',
+            pane: 'pane_TKO_FDU_2022_0',
+            onEachFeature: pop_TKO_FDU_2022_0,
+            style: style_TKO_FDU_2022_0_0,
+        });
+        bounds_group.addLayer(layer_TKO_FDU_2022_0);
+        map.addLayer(layer_TKO_FDU_2022_0);
+        function pop_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1(feature, layer) {
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OBJECTID'] !== null ? autolinker.link(String(feature.properties['OBJECTID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIVI_DIV_NBR'] !== null ? autolinker.link(String(feature.properties['DIVI_DIV_NBR']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DIVI_SHORT_CODE'] !== null ? autolinker.link(String(feature.properties['DIVI_SHORT_CODE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OZON_OPERATING_ZONE_ID'] !== null ? autolinker.link(String(feature.properties['OZON_OPERATING_ZONE_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['FIELD_TEAM'] !== null ? autolinker.link(String(feature.properties['FIELD_TEAM']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['MANU_ID'] !== null ? autolinker.link(String(feature.properties['MANU_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['OPAR_OPERATING_AREA_NAME'] !== null ? autolinker.link(String(feature.properties['OPAR_OPERATING_AREA_NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LICENCE_ID'] !== null ? autolinker.link(String(feature.properties['LICENCE_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LICN_CATEGORY_ID'] !== null ? autolinker.link(String(feature.properties['LICN_CATEGORY_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LINC_CERT_LEVEL_ID'] !== null ? autolinker.link(String(feature.properties['LINC_CERT_LEVEL_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TERM'] !== null ? autolinker.link(String(feature.properties['TERM']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['TENURE_TYPE'] !== null ? autolinker.link(String(feature.properties['TENURE_TYPE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LICN_LICENCE_STATE'] !== null ? autolinker.link(String(feature.properties['LICN_LICENCE_STATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['REGISTRANT'] !== null ? autolinker.link(String(feature.properties['REGISTRANT']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PERM_PERMIT_ID'] !== null ? autolinker.link(String(feature.properties['PERM_PERMIT_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['GEOGRAPHIC_LOCATION'] !== null ? autolinker.link(String(feature.properties['GEOGRAPHIC_LOCATION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['MARK_MARK_ID'] !== null ? autolinker.link(String(feature.properties['MARK_MARK_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BLOCK_ID'] !== null ? autolinker.link(String(feature.properties['BLOCK_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BLOCK_FULL_NAME'] !== null ? autolinker.link(String(feature.properties['BLOCK_FULL_NAME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CUTB_SYSTEM_ID'] !== null ? autolinker.link(String(feature.properties['CUTB_SYSTEM_ID']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CUTB_BLOCK_STATE'] !== null ? autolinker.link(String(feature.properties['CUTB_BLOCK_STATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CUTB_LONGITUDE'] !== null ? autolinker.link(String(feature.properties['CUTB_LONGITUDE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CUTB_LATITUDE'] !== null ? autolinker.link(String(feature.properties['CUTB_LATITUDE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['STTP_STAND_TYPE'] !== null ? autolinker.link(String(feature.properties['STTP_STAND_TYPE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CUTB_VOL_DATA_SOURCE'] !== null ? autolinker.link(String(feature.properties['CUTB_VOL_DATA_SOURCE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BLAL_MERCH_HA_AREA'] !== null ? autolinker.link(String(feature.properties['BLAL_MERCH_HA_AREA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BLAL_HARVESTED_HA_AREA'] !== null ? autolinker.link(String(feature.properties['BLAL_HARVESTED_HA_AREA']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BLAL_CRUISE_M3_VOL'] !== null ? autolinker.link(String(feature.properties['BLAL_CRUISE_M3_VOL']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['RW_VOL'] !== null ? autolinker.link(String(feature.properties['RW_VOL']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BLOCK_VOLUME'] !== null ? autolinker.link(String(feature.properties['BLOCK_VOLUME']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['BLAL_HARVESTED_M3_VOL'] !== null ? autolinker.link(String(feature.properties['BLAL_HARVESTED_M3_VOL']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AUCTION_STATUS'] !== null ? autolinker.link(String(feature.properties['AUCTION_STATUS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AUCTION_DATE'] !== null ? autolinker.link(String(feature.properties['AUCTION_DATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AUCTION_FISCAL'] !== null ? autolinker.link(String(feature.properties['AUCTION_FISCAL']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AUCTION_QUARTER'] !== null ? autolinker.link(String(feature.properties['AUCTION_QUARTER']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['AUC_QUART_MONTH'] !== null ? autolinker.link(String(feature.properties['AUC_QUART_MONTH']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CURRENT_PERIOD_FLAG'] !== null ? autolinker.link(String(feature.properties['CURRENT_PERIOD_FLAG']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CURRENT_PERIOD_START'] !== null ? autolinker.link(String(feature.properties['CURRENT_PERIOD_START']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CURRENT_PERIOD_END'] !== null ? autolinker.link(String(feature.properties['CURRENT_PERIOD_END']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SILVICULTURE_SYSTEM'] !== null ? autolinker.link(String(feature.properties['SILVICULTURE_SYSTEM']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['YARDING_SYSTEM'] !== null ? autolinker.link(String(feature.properties['YARDING_SYSTEM']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HARVEST_CONSIDERATIONS'] !== null ? autolinker.link(String(feature.properties['HARVEST_CONSIDERATIONS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['PIECE_SIZE'] !== null ? autolinker.link(String(feature.properties['PIECE_SIZE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SPECIES_COMPOSITION'] !== null ? autolinker.link(String(feature.properties['SPECIES_COMPOSITION']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HI_STATUS'] !== null ? autolinker.link(String(feature.properties['HI_STATUS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['HI_DATE'] !== null ? autolinker.link(String(feature.properties['HI_DATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['EXPIRE_STATUS'] !== null ? autolinker.link(String(feature.properties['EXPIRE_STATUS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['EXPIRE_DATE'] !== null ? autolinker.link(String(feature.properties['EXPIRE_DATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['RC_STATUS'] !== null ? autolinker.link(String(feature.properties['RC_STATUS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['RC_DATE'] !== null ? autolinker.link(String(feature.properties['RC_DATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DR_STATUS'] !== null ? autolinker.link(String(feature.properties['DR_STATUS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DR_DATE'] !== null ? autolinker.link(String(feature.properties['DR_DATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DVS_STATUS'] !== null ? autolinker.link(String(feature.properties['DVS_STATUS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DVS_DATE'] !== null ? autolinker.link(String(feature.properties['DVS_DATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LAYOUT_STATUS'] !== null ? autolinker.link(String(feature.properties['LAYOUT_STATUS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LAYOUT_DATE'] !== null ? autolinker.link(String(feature.properties['LAYOUT_DATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DVC_STATUS'] !== null ? autolinker.link(String(feature.properties['DVC_STATUS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['DVC_DATE'] !== null ? autolinker.link(String(feature.properties['DVC_DATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['WRITE_OFF_STATUS'] !== null ? autolinker.link(String(feature.properties['WRITE_OFF_STATUS']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['WRITE_OFF_DATE'] !== null ? autolinker.link(String(feature.properties['WRITE_OFF_DATE']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['LICN_SEQ_NBR'] !== null ? autolinker.link(String(feature.properties['LICN_SEQ_NBR']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['CUTB_SEQ_NBR'] !== null ? autolinker.link(String(feature.properties['CUTB_SEQ_NBR']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Length'] !== null ? autolinker.link(String(feature.properties['SHAPE_Length']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2">' + (feature.properties['SHAPE_Area'] !== null ? autolinker.link(String(feature.properties['SHAPE_Area']).replace(/'/g, '\'').toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1_0(feature) {
+            switch(String(feature.properties['FIELD_TEAM'])) {
+                default:
+                    return {
+                pane: 'pane_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(48,18,59,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Arrow':
+                    return {
+                pane: 'pane_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(40,188,235,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Boundary':
+                    return {
+                pane: 'pane_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(164,252,60,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'East Kootenay':
+                    return {
+                pane: 'pane_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(251,126,33,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Kootenay Lake':
+                    return {
+                pane: 'pane_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1',
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1.0, 
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(122,4,3,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1');
+        map.getPane('pane_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1').style.zIndex = 401;
+        map.getPane('pane_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1').style['mix-blend-mode'] = 'normal';
+        var layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1 = new L.geoJson(json_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1',
+            layerName: 'layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1',
+            pane: 'pane_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1',
+            onEachFeature: pop_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1,
+            style: style_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1_0,
+        });
+        bounds_group.addLayer(layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1);
+        map.addLayer(layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1);
+        var overlaysTree = [
+            {label: 'Sales_Schedule_FY26 — TKO_Sales_Schedule_FY26<br /><table><tr><td style="text-align: center;"></td><td></td></tr><tr><td style="text-align: center;"><img src="legend/Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1_Arrow1.png" /></td><td>Arrow</td></tr><tr><td style="text-align: center;"><img src="legend/Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1_Boundary2.png" /></td><td>Boundary</td></tr><tr><td style="text-align: center;"><img src="legend/Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1_EastKootenay3.png" /></td><td>East Kootenay</td></tr><tr><td style="text-align: center;"><img src="legend/Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1_KootenayLake4.png" /></td><td>Kootenay Lake</td></tr></table>', layer: layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1},
+            {label: '<img src="legend/TKO_FDU_2022_0.png" /> TKO_FDU_2022', layer: layer_TKO_FDU_2022_0},
+        ];
+        // Add basemap to layer control tree
+        var baseTree = [
+            {label: "OpenStreetMap", layer: baseMap_OSM}
+        ];
+        var lay = L.control.layers.tree(baseTree, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: true,
+        });
+        lay.addTo(map);
+        setBounds();
+        var i = 0;
+        layer_TKO_FDU_2022_0.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            //layer.bindTooltip((layer.feature.properties['Name'] !== null?String('<div style="color: #323232; font-size: 10pt; font-family: \'Arial\', sans-serif;">' + layer.feature.properties['Name']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_TKO_FDU_2022_0'});
+            //labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              //addLabel(layer, i);
+              i++;
+        });
+        var i = 0;
+        layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1.eachLayer(function(layer) {
+            var context = {
+                feature: layer.feature,
+                variables: {}
+            };
+            layer.bindTooltip((layer.feature.properties['BLOCK_FULL_NAME'] !== null?String('<div style="color: #323232; font-size: 7pt; font-family: \'Arial\', sans-serif;">' + layer.feature.properties['BLOCK_FULL_NAME']) + '</div>':''), {permanent: true, offset: [-0, -16], className: 'css_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1'});
+            labels.push(layer);
+            totalMarkers += 1;
+              layer.added = true;
+              addLabel(layer, i);
+              i++;
+        });
+        map.addControl(new L.Control.Search({
+            layer: layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1,
+            initial: false,
+            hideMarkerOnCollapse: true,
+            propertyName: 'LICENCE_ID'}));
+        document.getElementsByClassName('search-button')[0].className +=
+         ' fa fa-binoculars';
+        resetLabels([layer_TKO_FDU_2022_0,layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1]);
+        map.on("zoomend", function(){
+            resetLabels([layer_TKO_FDU_2022_0,layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1]);
+        });
+        map.on("layeradd", function(){
+            resetLabels([layer_TKO_FDU_2022_0,layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1]);
+        });
+        map.on("layerremove", function(){
+            resetLabels([layer_TKO_FDU_2022_0,layer_Sales_Schedule_FY26TKO_Sales_Schedule_FY26_1]);
+        });
+        </script>
+    </body>
+</html>
